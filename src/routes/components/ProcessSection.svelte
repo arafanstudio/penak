@@ -113,53 +113,52 @@
 			</p>
 		</div>
 
-		<!-- Steps Grid -->
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
-			<!-- Connection Line (Desktop) -->
-			<div class="hidden lg:block absolute top-1/2 left-0 w-full h-px bg-white/10 -z-10"></div>
+		<!-- Steps Grid / Mobile Carousel -->
+		<div class="mobile-carousel-container -mx-5 px-5 lg:mx-0 lg:px-0">
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 relative 
+				flex overflow-x-auto lg:grid snap-x snap-mandatory scroll-smooth pb-8 lg:pb-0">
+				<!-- Connection Line (Desktop) -->
+				<div class="hidden lg:block absolute top-1/2 left-0 w-full h-px bg-white/10 -z-10"></div>
 
-			{#each steps as step, index}
-				<div 
-					class="relative group"
-					bind:this={stepCards[index]}
-				>
-					<Card class="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 md:p-12 transition-all duration-500 hover:bg-white/10 hover:border-yellow-200/20 hover:shadow-2xl hover:shadow-yellow-200/5 overflow-hidden backdrop-blur-sm">
-						<!-- Step Number Background -->
-						<span class="absolute -top-4 -right-4 text-8xl font-black text-white/5 group-hover:text-yellow-200/5 transition-colors pointer-events-none">
-							{step.number}
-						</span>
-						
-						<!-- Step Number Badge -->
-						<div class="absolute top-8 right-10 w-12 h-12 rounded-full bg-yellow-200/10 flex items-center justify-center group-hover:bg-yellow-200/20 transition-colors">
-							<span class="text-xl font-bold text-yellow-200">
+				{#each steps as step, index}
+					<div 
+						class="relative group min-w-[85%] lg:min-w-0 snap-center"
+						bind:this={stepCards[index]}
+					>
+						<Card class="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 md:p-12 transition-all duration-500 hover:bg-white/10 hover:border-yellow-200/20 hover:shadow-2xl hover:shadow-yellow-200/5 overflow-hidden backdrop-blur-sm h-full">
+							<!-- Step Number Background -->
+							<span class="absolute -top-4 -right-4 text-8xl font-black text-white/5 group-hover:text-yellow-200/5 transition-colors pointer-events-none">
 								{step.number}
 							</span>
-						</div>
+							
+							<!-- Step Number Badge -->
+							<div class="absolute top-8 right-10 w-12 h-12 rounded-full bg-yellow-200/10 flex items-center justify-center group-hover:bg-yellow-200/20 transition-colors">
+								<span class="text-xl font-bold text-yellow-200">
+									{step.number}
+								</span>
+							</div>
 
-						<!-- Icon -->
-						<div class="mb-10 inline-flex p-5 bg-white/5 text-yellow-200 rounded-2xl shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-white/10">
-							<svelte:component this={step.icon} size={32} />
-						</div>
+							<!-- Icon -->
+							<div class="mb-10 inline-flex p-5 bg-white/5 text-yellow-200 rounded-2xl shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-white/10">
+								<svelte:component this={step.icon} size={32} />
+							</div>
 
-						<!-- Content -->
-						<div class="space-y-4 relative z-10">
-							<h4 class="text-2xl font-bold text-white group-hover:text-yellow-200 transition-colors">
-								{step.title}
-							</h4>
-							<p class="text-white/60 leading-relaxed group-hover:text-white/90 transition-colors">
-								{step.description}
-							</p>
-						</div>
-					</Card>
-					
-					<!-- Arrow (Mobile/Tablet) -->
-					{#if index < steps.length - 1}
-						<div class="lg:hidden flex justify-center py-4">
-							<div class="w-px h-8 bg-white/10"></div>
-						</div>
-					{/if}
-				</div>
-			{/each}
+							<!-- Content -->
+							<div class="space-y-4 relative z-10">
+								<h4 class="text-2xl font-bold text-white group-hover:text-yellow-200 transition-colors">
+									{step.title}
+								</h4>
+								<p class="text-white/60 leading-relaxed group-hover:text-white/90 transition-colors">
+									{step.description}
+								</p>
+							</div>
+						</Card>
+						
+						<!-- Arrow (Desktop only now, mobile uses carousel) -->
+						<!-- We hide the vertical arrow on mobile as it's now a horizontal carousel -->
+					</div>
+				{/each}
+			</div>
 		</div>
 
 		<!-- CTA Bottom -->
@@ -190,3 +189,21 @@
 		</div>
 	</div>
 </section>
+
+<style>
+	@media (max-width: 1023px) {
+		.mobile-carousel-container {
+			overflow: hidden;
+		}
+		.flex {
+			display: flex;
+			gap: 1rem;
+			padding-left: 1.25rem;
+			padding-right: 1.25rem;
+		}
+		.snap-center {
+			scroll-snap-align: center;
+			scroll-snap-stop: always;
+		}
+	}
+</style>

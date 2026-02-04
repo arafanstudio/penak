@@ -32,6 +32,7 @@ declare module '$env/static/private' {
 	export const SESSION_MANAGER: string;
 	export const COLORTERM: string;
 	export const XDG_CONFIG_DIRS: string;
+	export const KGLOBALACCELD_PLATFORM: string;
 	export const XDG_SESSION_PATH: string;
 	export const HISTCONTROL: string;
 	export const XDG_MENU_PREFIX: string;
@@ -159,6 +160,7 @@ declare module '$env/dynamic/private' {
 		SESSION_MANAGER: string;
 		COLORTERM: string;
 		XDG_CONFIG_DIRS: string;
+		KGLOBALACCELD_PLATFORM: string;
 		XDG_SESSION_PATH: string;
 		HISTCONTROL: string;
 		XDG_MENU_PREFIX: string;

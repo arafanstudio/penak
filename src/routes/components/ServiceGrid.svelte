@@ -1,121 +1,187 @@
 <script lang="ts">
-	import { Shirt, Link2, Code2, ShoppingBag, ArrowRight, Zap, Globe, ShieldCheck } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import gsap from 'gsap';
 	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
-	import Badge from '$lib/components/ui/badge.svelte';
-	import Card from '$lib/components/ui/card.svelte';
 
 	gsap.registerPlugin(ScrollTrigger);
 
 	interface Service {
 		id: string;
 		title: string;
-		description: string;
-		icon: any;
-		category: 'bisnis' | 'tools' | 'dev';
-		badge?: {
-			text: string;
-			variant: 'default' | 'secondary' | 'destructive' | 'outline';
-		};
+		image: string;
 	}
 
 	const services: Service[] = [
 		{
 			id: 'apparel',
 			title: 'Penak Apparel',
-			description: 'Kelola sistem Pre-Order untuk merchandise dengan mudah. Terima pesanan, kelola stok, dan kirim produk tanpa ribet.',
-			icon: Shirt,
-			category: 'bisnis',
-			badge: {
-				text: 'Populer',
-				variant: 'default'
-			}
+			image: '/images/services/apparel.svg'
 		},
 		{
 			id: 'shortener',
 			title: 'Penak Shortener',
-			description: 'Perpendek link panjang menjadi URL yang ringkas dan mudah dibagikan. Pantau analytics dan klik secara real-time.',
-			icon: Link2,
-			category: 'tools'
+			image: '/images/services/shortener.svg'
 		},
 		{
 			id: 'dev',
 			title: 'Penak Dev',
-			description: 'Layanan custom web development untuk kebutuhan spesifik bisnis Anda. Dari landing page hingga aplikasi kompleks.',
-			icon: Code2,
-			category: 'dev'
+			image: '/images/services/dev.svg'
 		},
 		{
 			id: 'store',
 			title: 'Penak Store',
-			description: 'Katalog produk eksklusif dengan sistem Pre-Order terintegrasi. Jual produk limited edition dengan sistem yang handal.',
-			icon: ShoppingBag,
-			category: 'bisnis',
-			badge: {
-				text: 'Segera Hadir',
-				variant: 'secondary'
-			}
+			image: '/images/services/store.svg'
+		},
+		{
+			id: 'creative',
+			title: 'Penak Creative',
+			image: '/images/services/creative.svg'
+		},
+		{
+			id: 'link',
+			title: 'Penak Link',
+			image: '/images/services/link.svg'
+		},
+		{
+			id: 'cloud',
+			title: 'Penak Cloud',
+			image: '/images/services/cloud.svg'
 		}
 	];
 
-	let sectionRef: HTMLElement;
-	let serviceCards: HTMLElement[] = [];
-	let activeCategory: 'semua' | 'bisnis' | 'tools' | 'dev' = 'semua';
+	// Duplicate services for infinite scroll effect
+	const duplicatedServices = [...services, ...services, ...services];
 
-	$: filteredServices = activeCategory === 'semua' 
-		? services 
-		: services.filter(s => s.category === activeCategory);
+	let carouselContainer: HTMLElement;
+	let isHovering = false;
+	let isTouching = false;
+	let autoScrollTween: gsap.core.Tween | null = null;
+	let hoveredCardIndex: number | null = null;
 
 	onMount(() => {
-		// Animate section header
-		const headerElements = sectionRef?.querySelectorAll('.section-header > *');
-		gsap.from(headerElements, {
-			scrollTrigger: {
-				trigger: sectionRef,
-				start: 'top 80%',
-				end: 'top 20%',
-				scrub: 0.5,
-				markers: false
-			},
-			opacity: 0,
-			y: 30,
-			stagger: 0.1,
-			duration: 0.8,
-			ease: 'power3.out'
+		if (!carouselContainer) return;
+
+		const totalWidth = carouselContainer.scrollWidth;
+		const containerWidth = carouselContainer.offsetWidth;
+		const scrollDistance = totalWidth / 3; // One set of services
+
+		// Start auto-scroll animation
+		function startAutoScroll() {
+			if (autoScrollTween) {
+				autoScrollTween.kill();
+			}
+
+			autoScrollTween = gsap.to(carouselContainer, {
+				scrollLeft: scrollDistance,
+				duration: 60, // Slow, smooth scroll
+				ease: 'none',
+				repeat: -1, // Infinite loop
+				onRepeat: () => {
+					// Reset to beginning when one cycle completes
+					carouselContainer.scrollLeft = 0;
+				}
+			});
+		}
+
+		// Start the auto-scroll on mount
+		startAutoScroll();
+
+		// Pause on hover (desktop)
+		carouselContainer.addEventListener('mouseenter', () => {
+			isHovering = true;
+			if (autoScrollTween) {
+				autoScrollTween.pause();
+			}
 		});
 
-		// Initial animation for cards
-		animateCards();
+		carouselContainer.addEventListener('mouseleave', () => {
+			isHovering = false;
+			hoveredCardIndex = null;
+			if (autoScrollTween) {
+				autoScrollTween.resume();
+			}
+		});
+
+		// Pause on touch/hold (mobile)
+		carouselContainer.addEventListener('touchstart', () => {
+			isTouching = true;
+			if (autoScrollTween) {
+				autoScrollTween.pause();
+			}
+		});
+
+		carouselContainer.addEventListener('touchend', () => {
+			isTouching = false;
+			hoveredCardIndex = null;
+			if (autoScrollTween) {
+				autoScrollTween.resume();
+			}
+		});
+
+		// Cleanup on unmount
+		return () => {
+			if (autoScrollTween) {
+				autoScrollTween.kill();
+			}
+		};
 	});
 
-	function animateCards() {
-		setTimeout(() => {
-			gsap.from(serviceCards.filter(Boolean), {
-				opacity: 0,
-				y: 30,
-				scale: 0.95,
-				stagger: 0.1,
-				duration: 0.5,
+	function handleCardHover(event: MouseEvent, index: number) {
+		if (isHovering) {
+			hoveredCardIndex = index;
+			const card = event.currentTarget as HTMLElement;
+			gsap.to(card, {
+				scale: 1.08,
+				duration: 0.4,
 				ease: 'power2.out',
 				overwrite: 'auto'
 			});
-		}, 50);
+		}
 	}
 
-	function setCategory(cat: typeof activeCategory) {
-		activeCategory = cat;
-		animateCards();
+	function handleCardHoverOut(event: MouseEvent) {
+		hoveredCardIndex = null;
+		const card = event.currentTarget as HTMLElement;
+		gsap.to(card, {
+			scale: 1,
+			duration: 0.4,
+			ease: 'power2.out',
+			overwrite: 'auto'
+		});
+	}
+
+	function handleCardTouchStart(event: TouchEvent, index: number) {
+		if (isTouching) {
+			hoveredCardIndex = index;
+			const card = event.currentTarget as HTMLElement;
+			gsap.to(card, {
+				scale: 1.08,
+				duration: 0.4,
+				ease: 'power2.out',
+				overwrite: 'auto'
+			});
+		}
+	}
+
+	function handleCardTouchEnd(event: TouchEvent) {
+		hoveredCardIndex = null;
+		const card = event.currentTarget as HTMLElement;
+		gsap.to(card, {
+			scale: 1,
+			duration: 0.4,
+			ease: 'power2.out',
+			overwrite: 'auto'
+		});
 	}
 </script>
 
-<section id="layanan" class="bg-black py-24 relative overflow-hidden" bind:this={sectionRef}>
-	<!-- Gradient Overlay to match Hero -->
+<section id="layanan" class="bg-black py-24 relative overflow-hidden">
+	<!-- Gradient Overlay -->
 	<div class="absolute inset-0 bg-gradient-to-b from-black/95 via-black/30 to-black/95 z-0 pointer-events-none"></div>
 	
-	<div class="container relative z-10">
+	<div class="relative z-10">
 		<!-- Section Header -->
-		<div class="section-header max-w-3xl mx-auto text-center mb-12 md:mb-16 space-y-4">
+		<div class="max-w-3xl mx-auto text-center mb-16 space-y-4 px-4">
 			<div class="text-yellow-200/80 text-sm font-bold tracking-[0.2em] uppercase">Ekosistem Kami</div>
 			<h3 class="text-3xl md:text-5xl font-extrabold text-white leading-tight font-['Playfair_Display']">
 				Pilih layanan yang <br class="hidden md:block" /> kamu butuhkan
@@ -125,70 +191,96 @@
 			</p>
 		</div>
 
-		<!-- Interactive Filter Tabs -->
-		<div class="flex flex-wrap justify-center gap-2 mb-12">
-			{#each ['semua', 'bisnis', 'tools', 'dev'] as cat}
-				<button 
-					class="px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 border-2 
-					{activeCategory === cat 
-						? 'bg-[#F3E5AB] border-[#F3E5AB] text-black shadow-lg shadow-yellow-200/20 scale-105' 
-						: 'bg-white/5 border-transparent text-white/60 hover:border-yellow-200/30 hover:text-yellow-200'}"
-					onclick={() => setCategory(cat as any)}
-				>
-					{cat.charAt(0).toUpperCase() + cat.slice(1)}
-				</button>
-			{/each}
-		</div>
-
-		<!-- Service Grid -->
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 min-h-[400px]">
-			{#each filteredServices as service, index (service.id)}
-				<div bind:this={serviceCards[index]}>
-					<Card class="group h-full flex flex-col p-8 md:p-10 rounded-[2rem] border border-white/10 hover:border-yellow-200/20 hover:shadow-2xl hover:shadow-yellow-200/5 transition-all duration-500 bg-white/5 backdrop-blur-sm">
-						<!-- Badge & Icon -->
-						<div class="flex items-start justify-between mb-8">
-							<div class="inline-flex p-4 bg-yellow-200/10 text-yellow-200 rounded-2xl group-hover:bg-[#F3E5AB] group-hover:text-black group-hover:rotate-6 transition-all duration-500">
-								<svelte:component this={service.icon} size={28} />
+		<!-- Infinite Carousel Container -->
+		<div class="carousel-outer-wrapper overflow-hidden">
+			<div 
+				bind:this={carouselContainer}
+				class="carousel-inner flex gap-6 overflow-x-auto scroll-smooth scrollbar-hide"
+				style="scroll-behavior: auto; padding: 1rem 0;"
+			>
+				{#each duplicatedServices as service, index (index)}
+					<div
+						class="card-wrapper flex-shrink-0"
+						on:mouseenter={(e) => handleCardHover(e, index)}
+						on:mouseleave={handleCardHoverOut}
+						on:touchstart={(e) => handleCardTouchStart(e, index)}
+						on:touchend={handleCardTouchEnd}
+						role="button"
+						tabindex="0"
+					>
+						<div class="relative w-64 md:w-80 h-96 rounded-2xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 group">
+							<!-- Background Image (SVG) -->
+							<div class="absolute inset-0 flex items-center justify-center p-12 transition-transform duration-700 group-hover:scale-110">
+									<img
+										src={service.image}
+										alt={service.title}
+										class="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(254,240,138,0.3)]"
+									/>
 							</div>
-							{#if service.badge}
-								<Badge variant={service.badge.variant} class="font-bold bg-yellow-200/20 text-yellow-200 border-none">
-									{service.badge.text}
-								</Badge>
-							{/if}
-						</div>
 
-						<!-- Content -->
-						<div class="flex-grow space-y-4">
-							<h4 class="text-xl font-bold text-white group-hover:text-[#F3E5AB] transition-colors">
-								{service.title}
-							</h4>
-							<p class="text-white/60 text-sm leading-relaxed">
-								{service.description}
-							</p>
-						</div>
+							<!-- Dark Gradient Overlay -->
+							<div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
 
-						<!-- Features List -->
-						<div class="mt-6 space-y-2">
-							<div class="flex items-center gap-2 text-xs font-medium text-white/40">
-								<Zap size={14} class="text-yellow-500" />
-								<span>Proses Instan</span>
-							</div>
-							<div class="flex items-center gap-2 text-xs font-medium text-white/40">
-								<ShieldCheck size={14} class="text-green-500" />
-								<span>Aman & Terpercaya</span>
+							<!-- Title -->
+							<div class="absolute inset-0 flex items-end justify-center pb-8">
+								<h4 class="text-2xl md:text-3xl font-bold text-white text-center px-4 drop-shadow-lg">
+									{service.title}
+								</h4>
 							</div>
 						</div>
+					</div>
+				{/each}
+			</div>
 
-						<!-- Link -->
-						<div class="mt-8 pt-6 border-t border-white/10">
-							<a href={`#${service.id}`} class="inline-flex items-center text-sm font-bold text-white hover:text-[#F3E5AB] transition-colors group/link">
-								Buka Layanan
-								<ArrowRight size={18} class="ml-2 transform group-hover/link:translate-x-1 transition-transform" />
-							</a>
-						</div>
-					</Card>
-				</div>
-			{/each}
+			<!-- Fade gradient on left (desktop) -->
+			<div class="hidden md:block absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-black via-black/50 to-transparent z-20 pointer-events-none"></div>
+
+			<!-- Fade gradient on right (desktop) -->
+			<div class="hidden md:block absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-black via-black/50 to-transparent z-20 pointer-events-none"></div>
 		</div>
 	</div>
 </section>
+
+<style>
+	.scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
+
+	.scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
+	.carousel-outer-wrapper {
+		position: relative;
+		overflow: visible;
+		padding: 1rem 0;
+	}
+
+	.carousel-inner {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+
+	@media (min-width: 768px) {
+		.carousel-inner {
+			padding-left: 2rem;
+			padding-right: 2rem;
+		}
+	}
+
+	.card-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		/* Provides space for the scaled card without clipping */
+		padding: 0;
+		will-change: transform;
+	}
+
+	.card-wrapper > div {
+		/* Ensure the inner card maintains its rounded corners during transform */
+		will-change: transform;
+		transform-origin: center;
+	}
+</style>

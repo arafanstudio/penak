@@ -10,8 +10,9 @@
     const sections: Section[] = [
         { number: '01', id: 'hero', label: 'Hero' },
         { number: '02', id: 'layanan', label: 'Services' },
-        { number: '03', id: 'cara-kerja', label: 'Process' },
-        { number: '04', id: 'tentang', label: 'Footer' }
+        { number: '03', id: 'terminal', label: 'Terminal' },
+        { number: '04', id: 'cara-kerja', label: 'Process' },
+        { number: '05', id: 'tentang', label: 'Footer' }
     ];
 
     let activeIndex = 0;
