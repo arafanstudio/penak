@@ -44,3 +44,7 @@ pnpm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Sanity
+studio/dist/
+studio/node_modules/

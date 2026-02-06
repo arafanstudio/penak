@@ -2,55 +2,31 @@
 	import { onMount } from 'svelte';
 	import gsap from 'gsap';
 	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
+	import { urlFor } from '$lib/sanity/client';
 
 	gsap.registerPlugin(ScrollTrigger);
 
 	interface Service {
 		id: string;
 		title: string;
-		image: string;
+		image: any;
 	}
 
-	const services: Service[] = [
+	export let services: Service[] = [];
+
+	// Fallback jika data belum ada atau kosong
+	const defaultServices: Service[] = [
 		{
 			id: 'apparel',
 			title: 'Penak Apparel',
 			image: '/images/services/apparel.svg'
-		},
-		{
-			id: 'shortener',
-			title: 'Penak Shortener',
-			image: '/images/services/shortener.svg'
-		},
-		{
-			id: 'dev',
-			title: 'Penak Dev',
-			image: '/images/services/dev.svg'
-		},
-		{
-			id: 'store',
-			title: 'Penak Store',
-			image: '/images/services/store.svg'
-		},
-		{
-			id: 'creative',
-			title: 'Penak Creative',
-			image: '/images/services/creative.svg'
-		},
-		{
-			id: 'link',
-			title: 'Penak Link',
-			image: '/images/services/link.svg'
-		},
-		{
-			id: 'cloud',
-			title: 'Penak Cloud',
-			image: '/images/services/cloud.svg'
 		}
 	];
 
+	$: displayServices = services && services.length > 0 ? services : defaultServices;
+
 	// Duplicate services for infinite scroll effect
-	const duplicatedServices = [...services, ...services, ...services];
+	$: duplicatedServices = [...displayServices, ...displayServices, ...displayServices];
 
 	let carouselContainer: HTMLElement;
 	let isHovering = false;
@@ -58,73 +34,64 @@
 	let autoScrollTween: gsap.core.Tween | null = null;
 	let hoveredCardIndex: number | null = null;
 
+	function startAutoScroll() {
+		if (!carouselContainer) return;
+		
+		const totalWidth = carouselContainer.scrollWidth;
+		const scrollDistance = totalWidth / 3;
+
+		if (autoScrollTween) {
+			autoScrollTween.kill();
+		}
+
+		autoScrollTween = gsap.to(carouselContainer, {
+			scrollLeft: scrollDistance,
+			duration: 60,
+			ease: 'none',
+			repeat: -1,
+			onRepeat: () => {
+				carouselContainer.scrollLeft = 0;
+			}
+		});
+	}
+
 	onMount(() => {
 		if (!carouselContainer) return;
 
-		const totalWidth = carouselContainer.scrollWidth;
-		const containerWidth = carouselContainer.offsetWidth;
-		const scrollDistance = totalWidth / 3; // One set of services
+		// Tunggu sebentar agar DOM ter-render dengan data baru
+		setTimeout(startAutoScroll, 100);
 
-		// Start auto-scroll animation
-		function startAutoScroll() {
-			if (autoScrollTween) {
-				autoScrollTween.kill();
-			}
-
-			autoScrollTween = gsap.to(carouselContainer, {
-				scrollLeft: scrollDistance,
-				duration: 60, // Slow, smooth scroll
-				ease: 'none',
-				repeat: -1, // Infinite loop
-				onRepeat: () => {
-					// Reset to beginning when one cycle completes
-					carouselContainer.scrollLeft = 0;
-				}
-			});
-		}
-
-		// Start the auto-scroll on mount
-		startAutoScroll();
-
-		// Pause on hover (desktop)
 		carouselContainer.addEventListener('mouseenter', () => {
 			isHovering = true;
-			if (autoScrollTween) {
-				autoScrollTween.pause();
-			}
+			if (autoScrollTween) autoScrollTween.pause();
 		});
 
 		carouselContainer.addEventListener('mouseleave', () => {
 			isHovering = false;
 			hoveredCardIndex = null;
-			if (autoScrollTween) {
-				autoScrollTween.resume();
-			}
+			if (autoScrollTween) autoScrollTween.resume();
 		});
 
-		// Pause on touch/hold (mobile)
 		carouselContainer.addEventListener('touchstart', () => {
 			isTouching = true;
-			if (autoScrollTween) {
-				autoScrollTween.pause();
-			}
+			if (autoScrollTween) autoScrollTween.pause();
 		});
 
 		carouselContainer.addEventListener('touchend', () => {
 			isTouching = false;
 			hoveredCardIndex = null;
-			if (autoScrollTween) {
-				autoScrollTween.resume();
-			}
+			if (autoScrollTween) autoScrollTween.resume();
 		});
 
-		// Cleanup on unmount
 		return () => {
-			if (autoScrollTween) {
-				autoScrollTween.kill();
-			}
+			if (autoScrollTween) autoScrollTween.kill();
 		};
 	});
+
+	// Re-start animation if services change
+	$: if (services && carouselContainer) {
+		setTimeout(startAutoScroll, 100);
+	}
 
 	function handleCardHover(event: MouseEvent, index: number) {
 		if (isHovering) {
@@ -173,14 +140,21 @@
 			overwrite: 'auto'
 		});
 	}
+
+	function getImageUrl(image: any) {
+		if (typeof image === 'string') return image;
+		try {
+			return urlFor(image).url();
+		} catch (e) {
+			return '/images/services/apparel.svg'; // fallback
+		}
+	}
 </script>
 
 <section id="layanan" class="bg-black py-24 relative overflow-hidden">
-	<!-- Gradient Overlay -->
 	<div class="absolute inset-0 bg-gradient-to-b from-black/95 via-black/30 to-black/95 z-0 pointer-events-none"></div>
 	
 	<div class="relative z-10">
-		<!-- Section Header -->
 		<div class="max-w-3xl mx-auto text-center mb-16 space-y-4 px-4">
 			<div class="text-yellow-200/80 text-sm font-bold tracking-[0.2em] uppercase">Ekosistem Kami</div>
 			<h3 class="text-3xl md:text-5xl font-extrabold text-white leading-tight font-['Playfair_Display']">
@@ -191,7 +165,6 @@
 			</p>
 		</div>
 
-		<!-- Infinite Carousel Container -->
 		<div class="carousel-outer-wrapper overflow-hidden">
 			<div 
 				bind:this={carouselContainer}
@@ -209,19 +182,16 @@
 						tabindex="0"
 					>
 						<div class="relative w-64 md:w-80 h-96 rounded-2xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 group">
-							<!-- Background Image (SVG) -->
 							<div class="absolute inset-0 flex items-center justify-center p-12 transition-transform duration-700 group-hover:scale-110">
 									<img
-										src={service.image}
+										src={getImageUrl(service.image)}
 										alt={service.title}
 										class="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(254,240,138,0.3)]"
 									/>
 							</div>
 
-							<!-- Dark Gradient Overlay -->
 							<div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
 
-							<!-- Title -->
 							<div class="absolute inset-0 flex items-end justify-center pb-8">
 								<h4 class="text-2xl md:text-3xl font-bold text-white text-center px-4 drop-shadow-lg">
 									{service.title}
@@ -232,10 +202,7 @@
 				{/each}
 			</div>
 
-			<!-- Fade gradient on left (desktop) -->
 			<div class="hidden md:block absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-black via-black/50 to-transparent z-20 pointer-events-none"></div>
-
-			<!-- Fade gradient on right (desktop) -->
 			<div class="hidden md:block absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-black via-black/50 to-transparent z-20 pointer-events-none"></div>
 		</div>
 	</div>
@@ -273,13 +240,11 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		/* Provides space for the scaled card without clipping */
 		padding: 0;
 		will-change: transform;
 	}
 
 	.card-wrapper > div {
-		/* Ensure the inner card maintains its rounded corners during transform */
 		will-change: transform;
 		transform-origin: center;
 	}

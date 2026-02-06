@@ -7,7 +7,7 @@ export default defineConfig({
     server: {
         allowedHosts: true
     },
-    ssr: {
-        noExternal: ['gsap']
-    }
+    // ssr: {
+    //     noExternal: ['gsap']
+    // }
 });
