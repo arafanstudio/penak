@@ -34,5 +34,11 @@ export default {
       type: 'number',
       description: 'Urutan tampilan di grid',
     },
+    {
+      name: 'url',
+      title: 'Service URL',
+      type: 'url',
+      description: 'Link ke halaman service (contoh: https://url.penak.online)',
+    },
   ],
 };
