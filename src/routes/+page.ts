@@ -6,7 +6,8 @@ export const load: PageLoad = async () => {
     "id": id.current,
     title,
     image,
-    order
+    order,
+    url
   }`);
 
   return {

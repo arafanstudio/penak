@@ -3,6 +3,10 @@
 	import gsap from 'gsap';
 	import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 	import { Terminal, Copy, RotateCcw } from 'lucide-svelte';
+	import PongGame from './PongGame.svelte';
+	import SnakeGame from './SnakeGame.svelte';
+	import TetrisGame from './TetrisGame.svelte';
+	import ParticleBackground from './ParticleBackground.svelte';
 
 	gsap.registerPlugin(ScrollTrigger);
 
@@ -18,6 +22,9 @@
 	let currentInput = '';
 	let terminalLines: TerminalLine[] = [];
 	let isAutoTyping = false;
+	let isPlayingPong = false;
+	let isPlayingSnake = false;
+	let isPlayingTetris = false;
 	let autoTypeTimeout: NodeJS.Timeout;
 	let idleTimeout: NodeJS.Timeout;
 
@@ -39,10 +46,23 @@
 				'  order <service> - Place an order (try: order apparel)',
 				'  info <service>  - Get service details',
 				'  contact         - Contact information',
+				'  game            - List available games',
+				'  play <game>     - Play a game (try: play pong)',
 				'  clear           - Clear terminal',
 				'  about           - About Penak Online'
 			],
 			description: 'Show available commands'
+		},
+		game: {
+			output: [
+				'Available games:',
+				'  pong            - Classic Pong game',
+				'  snake           - Retro Snake game',
+				'  tetris          - Classic Tetris game',
+				'',
+				'Type "play <game>" to start!'
+			],
+			description: 'List available games'
 		},
 		about: {
 			output: [
@@ -204,6 +224,30 @@
 			return;
 		}
 
+		if (trimmedCmd === 'play' || trimmedCmd === 'play pong') {
+			addLine('output', 'Starting Pong game...');
+			setTimeout(() => {
+				isPlayingPong = true;
+			}, 500);
+			return;
+		}
+
+		if (trimmedCmd === 'play snake') {
+			addLine('output', 'Starting Snake game...');
+			setTimeout(() => {
+				isPlayingSnake = true;
+			}, 500);
+			return;
+		}
+
+		if (trimmedCmd === 'play tetris') {
+			addLine('output', 'Starting Tetris game...');
+			setTimeout(() => {
+				isPlayingTetris = true;
+			}, 500);
+			return;
+		}
+
 		// Check for order commands
 		if (trimmedCmd.startsWith('order ')) {
 			const service = trimmedCmd.slice(6).trim();
@@ -241,6 +285,8 @@
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
+		if (isPlayingPong || isPlayingSnake || isPlayingTetris) return; // Ignore terminal input while playing
+
 		if (e.key === 'Enter') {
 			e.preventDefault();
 			processCommand(currentInput);
@@ -257,7 +303,7 @@
 	function resetIdleTimeout() {
 		clearIdleTimeout();
 		idleTimeout = setTimeout(() => {
-			if (terminalLines.length === 0 && !isAutoTyping) {
+			if (terminalLines.length === 0 && !isAutoTyping && !isPlayingPong && !isPlayingSnake && !isPlayingTetris) {
 				autoTypeIntroduction();
 			}
 		}, 3000);
@@ -319,8 +365,10 @@
 </script>
 
 <section id="terminal" class="bg-black py-24 relative overflow-hidden">
-	<!-- Background gradient -->
-	<div class="absolute inset-0 bg-gradient-to-b from-black/95 via-black/30 to-black/95 z-0 pointer-events-none"></div>
+<!-- Background gradient and particles -->
+		<div class="absolute inset-0 bg-gradient-to-b from-black/95 via-black/30 to-black/95 z-0">
+			<ParticleBackground />
+		</div>
 
 	<div class="container relative z-10">
 		<!-- Section Header -->
@@ -346,105 +394,97 @@
 			<div class="absolute -inset-1 bg-gradient-to-r from-yellow-200/20 to-yellow-500/20 rounded-2xl blur-2xl opacity-50"></div>
 
 			<!-- Terminal window -->
-			<div class="relative bg-black border-2 border-yellow-200/40 rounded-2xl overflow-hidden shadow-2xl shadow-yellow-200/20">
-				<!-- Terminal header -->
-				<div class="bg-gradient-to-r from-yellow-900/30 to-yellow-800/20 border-b border-yellow-200/30 px-6 py-4 flex items-center justify-between">
-					<div class="flex items-center gap-3">
-						<div class="w-3 h-3 rounded-full bg-red-500"></div>
-						<div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-						<div class="w-3 h-3 rounded-full bg-green-500"></div>
-						<span class="ml-4 text-yellow-200 text-sm font-mono">penak@terminal:~$</span>
+			<div class="relative bg-[#0a0a0a] border border-yellow-200/30 rounded-xl shadow-2xl overflow-hidden flex flex-col h-[500px]">
+				<!-- Window Header -->
+				<div class="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-yellow-200/10">
+					<div class="flex gap-2">
+						<div class="w-3 h-3 rounded-full bg-red-500/50"></div>
+						<div class="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+						<div class="w-3 h-3 rounded-full bg-green-500/50"></div>
 					</div>
-					<div class="flex items-center gap-2">
+					<div class="text-xs font-mono text-white/40 flex items-center gap-2">
+						<Terminal size={12} />
+						bash — 80x24
+					</div>
+					<div class="flex gap-3">
 						<button
 							on:click={copyToClipboard}
-							class="p-2 hover:bg-white/10 rounded-lg transition-colors text-yellow-200 hover:text-yellow-100"
+							class="text-white/40 hover:text-yellow-200 transition-colors"
 							title="Copy output"
 						>
-							<Copy size={18} />
+							<Copy size={14} />
 						</button>
 						<button
 							on:click={clearTerminal}
-							class="p-2 hover:bg-white/10 rounded-lg transition-colors text-yellow-200 hover:text-yellow-100"
-							title="Clear terminal"
+							class="text-white/40 hover:text-yellow-200 transition-colors"
+							title="Reset terminal"
 						>
-							<RotateCcw size={18} />
+							<RotateCcw size={14} />
 						</button>
 					</div>
 				</div>
 
-				<!-- Terminal output -->
+				<!-- Terminal Body -->
 				<div
 					bind:this={outputRef}
-					class="bg-black p-6 font-mono text-sm text-yellow-200 h-96 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-yellow-200/30 scrollbar-track-black"
+					class="flex-1 p-6 font-mono text-sm overflow-y-auto scrollbar-hide"
 				>
-					{#each terminalLines as line, idx (idx)}
-						<div class="whitespace-pre-wrap break-words">
-							{#if line.type === 'input'}
-								<span class="text-yellow-300 font-bold">{line.content}</span>
-							{:else if line.type === 'output'}
-								<span class="text-white/80">{line.content}</span>
-							{:else}
-								<span class="text-yellow-200">{line.content}</span>
-								{#if line.isTyping}
-									<span class="animate-pulse">▌</span>
-								{/if}
+					{#if isPlayingPong}
+						<PongGame on:exit={() => isPlayingPong = false} />
+					{:else if isPlayingSnake}
+						<SnakeGame on:exit={() => isPlayingSnake = false} />
+					{:else if isPlayingTetris}
+						<TetrisGame on:exit={() => isPlayingTetris = false} />
+					{:else}
+						<div class="space-y-2">
+							{#each terminalLines as line}
+								<div class="flex gap-2 {line.type === 'input' ? 'text-yellow-200' : line.type === 'system' ? 'text-white/40' : 'text-white/80'}">
+									<span class="whitespace-pre-wrap">{line.content}</span>
+									{#if line.isTyping}
+										<span class="w-2 h-4 bg-yellow-200 animate-pulse"></span>
+									{/if}
+								</div>
+							{/each}
+
+							{#if !isAutoTyping}
+								<div class="flex gap-2 text-yellow-200">
+									<span>$</span>
+<input
+											bind:this={inputRef}
+											bind:value={currentInput}
+											on:keydown={handleKeyDown}
+											class="flex-1 bg-transparent border-none outline-none p-0 text-yellow-200"
+										/>
+								</div>
 							{/if}
 						</div>
-					{/each}
+					{/if}
 				</div>
 
-				<!-- Terminal input -->
-				<div class="bg-black border-t border-yellow-200/30 px-6 py-4 flex items-center gap-2">
-					<span class="text-yellow-200 font-mono font-bold">$</span>
-					<input
-						bind:this={inputRef}
-						bind:value={currentInput}
-						on:keydown={handleKeyDown}
-						type="text"
-						placeholder="Type a command..."
-						class="flex-1 bg-transparent text-yellow-200 font-mono outline-none placeholder-yellow-600/50 caret-yellow-200"
-						autocomplete="off"
-					/>
+				<!-- Terminal Footer -->
+				<div class="px-4 py-2 bg-white/5 border-t border-yellow-200/10 flex justify-between items-center">
+					<div class="text-[10px] font-mono text-white/20">
+						Connected to penak-v1.0.0-stable
+					</div>
+					<div class="text-[10px] font-mono text-white/20">
+						UTF-8
+					</div>
 				</div>
-			</div>
-
-			<!-- Hint text -->
-			<div class="mt-6 text-center text-white/40 text-sm font-mono">
-				💡 Tip: Try typing <span class="text-yellow-200">help</span>, <span class="text-yellow-200">ls</span>, or <span class="text-yellow-200">order apparel</span>
 			</div>
 		</div>
 	</div>
 </section>
 
 <style>
-	::-webkit-scrollbar {
-		width: 8px;
+	.scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
+	.scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
 	}
 
-	::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	::-webkit-scrollbar-thumb {
-		background: rgba(250, 204, 21, 0.3);
-		border-radius: 4px;
-	}
-
-	::-webkit-scrollbar-thumb:hover {
-		background: rgba(250, 204, 21, 0.5);
-	}
-
-	@keyframes blink {
-		0%, 49% {
-			opacity: 1;
-		}
-		50%, 100% {
-			opacity: 0;
-		}
-	}
-
-	.animate-pulse {
-		animation: blink 1s infinite;
+	input {
+		caret-shape: block;
 	}
 </style>

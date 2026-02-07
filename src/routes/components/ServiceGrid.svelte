@@ -10,6 +10,7 @@
 		id: string;
 		title: string;
 		image: any;
+		url?: string;
 	}
 
 	export let services: Service[] = [];
@@ -19,7 +20,20 @@
 		{
 			id: 'apparel',
 			title: 'Penak Apparel',
-			image: '/images/services/apparel.svg'
+			image: '/images/services/apparel.svg',
+			url: 'https://apparel.penak.online'
+		},
+		{
+			id: 'shortener',
+			title: 'Penak Shortener',
+			image: '/images/services/shortener.svg',
+			url: 'https://url.penak.online'
+		},
+		{
+			id: 'dev',
+			title: 'Penak Dev',
+			image: '/images/services/dev.svg',
+			url: 'https://dev.penak.online'
 		}
 	];
 
@@ -29,6 +43,7 @@
 	$: duplicatedServices = [...displayServices, ...displayServices, ...displayServices];
 
 	let carouselContainer: HTMLElement;
+	let sectionHeader: HTMLElement;
 	let isHovering = false;
 	let isTouching = false;
 	let autoScrollTween: gsap.core.Tween | null = null;
@@ -57,6 +72,31 @@
 
 	onMount(() => {
 		if (!carouselContainer) return;
+
+		// Entrance Animation for Header
+		gsap.from(sectionHeader.children, {
+			scrollTrigger: {
+				trigger: sectionHeader,
+				start: 'top 85%',
+			},
+			y: 50,
+			opacity: 0,
+			duration: 1,
+			stagger: 0.2,
+			ease: 'power3.out'
+		});
+
+		// Entrance Animation for Carousel
+		gsap.from(carouselContainer, {
+			scrollTrigger: {
+				trigger: carouselContainer,
+				start: 'top 90%',
+			},
+			x: 100,
+			opacity: 0,
+			duration: 1.2,
+			ease: 'power2.out'
+		});
 
 		// Tunggu sebentar agar DOM ter-render dengan data baru
 		setTimeout(startAutoScroll, 100);
@@ -149,13 +189,19 @@
 			return '/images/services/apparel.svg'; // fallback
 		}
 	}
+
+	function handleCardClick(url?: string) {
+		if (url) {
+			window.open(url, '_blank', 'noopener,noreferrer');
+		}
+	}
 </script>
 
 <section id="layanan" class="bg-black py-24 relative overflow-hidden">
 	<div class="absolute inset-0 bg-gradient-to-b from-black/95 via-black/30 to-black/95 z-0 pointer-events-none"></div>
 	
 	<div class="relative z-10">
-		<div class="max-w-3xl mx-auto text-center mb-16 space-y-4 px-4">
+		<div bind:this={sectionHeader} class="max-w-3xl mx-auto text-center mb-16 space-y-4 px-4">
 			<div class="text-yellow-200/80 text-sm font-bold tracking-[0.2em] uppercase">Ekosistem Kami</div>
 			<h3 class="text-3xl md:text-5xl font-extrabold text-white leading-tight font-['Playfair_Display']">
 				Pilih layanan yang <br class="hidden md:block" /> kamu butuhkan
@@ -178,6 +224,8 @@
 						on:mouseleave={handleCardHoverOut}
 						on:touchstart={(e) => handleCardTouchStart(e, index)}
 						on:touchend={handleCardTouchEnd}
+						on:click={() => handleCardClick(service.url)}
+						on:keydown={(e) => e.key === 'Enter' && handleCardClick(service.url)}
 						role="button"
 						tabindex="0"
 					>
